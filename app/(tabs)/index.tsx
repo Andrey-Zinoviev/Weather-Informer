@@ -1,98 +1,171 @@
-import { Image } from 'expo-image';
-import { Platform, StyleSheet } from 'react-native';
+import React, { useEffect, useState } from 'react'
+import {
+    View, Text, FlatList, TouchableOpacity, StyleSheet,
+    ActivityIndicator, Image
+} from 'react-native'
+import { fetchCurrentWeather } from '../../services/weatherApi'
+import { useRouter } from "expo-router";
 
-import { HelloWave } from '@/components/hello-wave';
-import ParallaxScrollView from '@/components/parallax-scroll-view';
-import { ThemedText } from '@/components/themed-text';
-import { ThemedView } from '@/components/themed-view';
-import { Link } from 'expo-router';
+const CITIES = ['Kyiv', 'London', 'New York', 'Tokyo', 'Paris', 'Berlin'];
 
-export default function HomeScreen() {
-  return (
-    <ParallaxScrollView
-      headerBackgroundColor={{ light: '#A1CEDC', dark: '#1D3D47' }}
-      headerImage={
-        <Image
-          source={require('@/assets/images/partial-react-logo.png')}
-          style={styles.reactLogo}
-        />
-      }>
-      <ThemedView style={styles.titleContainer}>
-        <ThemedText type="title">Welcome!</ThemedText>
-        <HelloWave />
-      </ThemedView>
-      <ThemedView style={styles.stepContainer}>
-        <ThemedText type="subtitle">Step 1: Try it</ThemedText>
-        <ThemedText>
-          Edit <ThemedText type="defaultSemiBold">app/(tabs)/index.tsx</ThemedText> to see changes.
-          Press{' '}
-          <ThemedText type="defaultSemiBold">
-            {Platform.select({
-              ios: 'cmd + d',
-              android: 'cmd + m',
-              web: 'F12',
-            })}
-          </ThemedText>{' '}
-          to open developer tools.
-        </ThemedText>
-      </ThemedView>
-      <ThemedView style={styles.stepContainer}>
-        <Link href="/modal">
-          <Link.Trigger>
-            <ThemedText type="subtitle">Step 2: Explore</ThemedText>
-          </Link.Trigger>
-          <Link.Preview />
-          <Link.Menu>
-            <Link.MenuAction title="Action" icon="cube" onPress={() => alert('Action pressed')} />
-            <Link.MenuAction
-              title="Share"
-              icon="square.and.arrow.up"
-              onPress={() => alert('Share pressed')}
-            />
-            <Link.Menu title="More" icon="ellipsis">
-              <Link.MenuAction
-                title="Delete"
-                icon="trash"
-                destructive
-                onPress={() => alert('Delete pressed')}
-              />
-            </Link.Menu>
-          </Link.Menu>
-        </Link>
+// Іконки міст (заглушки, можна замінити на реальні фото)
+const CITY_IMAGES = CITIES.map(() => 'https://img.icons8.com/color/96/city.png');
 
-        <ThemedText>
-          {`Tap the Explore tab to learn more about what's included in this starter app.`}
-        </ThemedText>
-      </ThemedView>
-      <ThemedView style={styles.stepContainer}>
-        <ThemedText type="subtitle">Step 3: Get a fresh start</ThemedText>
-        <ThemedText>
-          {`When you're ready, run `}
-          <ThemedText type="defaultSemiBold">npm run reset-project</ThemedText> to get a fresh{' '}
-          <ThemedText type="defaultSemiBold">app</ThemedText> directory. This will move the current{' '}
-          <ThemedText type="defaultSemiBold">app</ThemedText> to{' '}
-          <ThemedText type="defaultSemiBold">app-example</ThemedText>.
-        </ThemedText>
-      </ThemedView>
-    </ParallaxScrollView>
-  );
+export default function WeatherScreen() {
+    const [selectedCity, setSelectedCity] = useState('Kyiv');
+    const [weather, setWeather] = useState<any>(null);
+    const [loading, setLoading] = useState(false);
+    const router = useRouter();
+
+    const loadWeather = async () => {
+        setLoading(true);
+        const data = await fetchCurrentWeather(selectedCity);
+        setWeather(data);
+        setLoading(false);
+    }
+
+    useEffect(() => {
+        loadWeather();
+    }, [selectedCity]);
+
+    const styles = StyleSheet.create({
+        container: {
+            flex: 1, backgroundColor: '#fff',
+            paddingTop: 50,
+        },
+        innerContainer: {
+            paddingHorizontal: 20,
+            flex: 1,
+        },
+        header: {
+            fontSize: 28,
+            fontWeight: 'bold',
+            marginBottom: 20,
+            color: '#1a1a1a'
+        },
+        categoriesList: {
+            flexGrow: 0,
+            marginBottom: 20
+        },
+        categoryBtn: {
+            flexDirection: 'row',
+            marginRight: 10,
+            alignItems: 'center',
+            backgroundColor: '#f0f0f0',
+            borderRadius: 20,
+            paddingHorizontal: 15,
+            height: 45,
+        },
+        categoryBtnActive: {
+            backgroundColor: '#007aff'
+        },
+        categoryText: {
+            color: '#444',
+            fontWeight: '600',
+        },
+        selectedCategoryText: {
+            color: '#fff'
+        },
+        weatherCard: {
+            backgroundColor: '#f9f9f9',
+            borderRadius: 20,
+            padding: 20,
+            alignItems: 'center',
+            shadowColor: '#000',
+            shadowOffset: { width: 0, height: 2 },
+            shadowOpacity: 0.1,
+            elevation: 3,
+        },
+        cityName: {
+            fontSize: 24,
+            fontWeight: 'bold',
+            marginBottom: 5
+        },
+        temp: {
+            fontSize: 64,
+            fontWeight: '300',
+            color: '#007aff'
+        },
+        condition: {
+            fontSize: 18,
+            color: '#666',
+            textTransform: 'capitalize'
+        },
+        weatherIcon: {
+            width: 100,
+            height: 100
+        },
+        detailsBtn: {
+            marginTop: 20,
+            backgroundColor: '#007aff',
+            paddingVertical: 12,
+            paddingHorizontal: 30,
+            borderRadius: 10
+        },
+        detailsBtnText: {
+            color: '#fff',
+            fontWeight: 'bold'
+        },
+        loaderContainer: {
+            flex: 1, justifyContent: 'center', alignItems: 'center'
+        }
+    });
+
+    return (
+        <View style={styles.container}>
+            <View style={styles.innerContainer}>
+                <Text style={styles.header}>WeatherInformer</Text>
+
+                <View>
+                    <FlatList
+                        horizontal
+                        showsHorizontalScrollIndicator={false}
+                        data={CITIES}
+                        keyExtractor={(item) => item}
+                        style={styles.categoriesList}
+                        renderItem={({ item }) => (
+                            <TouchableOpacity
+                                style={[styles.categoryBtn, selectedCity === item && styles.categoryBtnActive]}
+                                onPress={() => setSelectedCity(item)}
+                            >
+                                <Text style={[styles.categoryText, selectedCity === item && styles.selectedCategoryText]}>
+                                    {item}
+                                </Text>
+                            </TouchableOpacity>
+                        )}
+                    />
+                </View>
+
+                {loading ? (
+                    <View style={styles.loaderContainer}>
+                        <ActivityIndicator size='large' color='#007aff' />
+                    </View>
+                ) : weather ? (
+                    <View style={styles.weatherCard}>
+                        <Text style={styles.cityName}>{weather.location.name}</Text>
+                        <Text style={styles.condition}>{weather.current.condition.text}</Text>
+                        <Image 
+                            source={{ uri: `https:${weather.current.condition.icon}` }} 
+                            style={styles.weatherIcon} 
+                        />
+                        <Text style={styles.temp}>{Math.round(weather.current.temp_c)}°C</Text>
+                        
+                        <TouchableOpacity 
+                            style={styles.detailsBtn}
+                            onPress={() => {
+                                router.push({
+                                    pathname: '/details/[id]',
+                                    params: { id: weather.location.name }
+                                })
+                            }}
+                        >
+                            <Text style={styles.detailsBtnText}>Детальніше</Text>
+                        </TouchableOpacity>
+                    </View>
+                ) : (
+                    <Text>Дані не знайдено</Text>
+                )}
+            </View>
+        </View>
+    )
 }
-
-const styles = StyleSheet.create({
-  titleContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 8,
-  },
-  stepContainer: {
-    gap: 8,
-    marginBottom: 8,
-  },
-  reactLogo: {
-    height: 178,
-    width: 290,
-    bottom: 0,
-    left: 0,
-    position: 'absolute',
-  },
-});
